@@ -1,0 +1,14 @@
+# Restart the server after editing. Existing plot coordinates never change.
+world-name: astral_islands
+# These bounds deliberately match the domain's fixed 512-block plot grid.
+world:
+  build-blocks-per-tick: 350
+  void-rescue-y: -32
+  keep-inventory: true
+  mob-cap-per-island: 40
+ui:
+  hud: true
+  title: "Astral Islands"
+# Coins are a separate, integer economy. No external economy dependency.
+# Progress is buffered for 3 seconds; all financial commands commit before success.
+activity-flush-seconds: 3

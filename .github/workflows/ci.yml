@@ -1,0 +1,92 @@
+name: CI
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    name: Build & test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compile, test, enforce coverage and shade
+        shell: bash
+        run: ./gradlew --no-daemon clean check shadowJar
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ matrix.os }}
+          path: |
+            build/reports/
+            build/test-results/
+      - name: Upload installable plugin
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: AstralIslands-plugin
+          path: build/libs/astral-islands-1.0.0.jar
+          if-no-files-found: error
+  paper-smoke:
+    name: Real Paper boot + persistence restart
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/download-artifact@v4
+        with:
+          name: AstralIslands-plugin
+          path: build/libs
+      - name: Boot Paper twice and assert live behavior
+        run: python3 scripts/paper_smoke.py build/libs/astral-islands-1.0.0.jar
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: paper-smoke-logs
+          path: |
+            run/boot-*.log
+            run/logs/
+            run/crash-reports/
+  release:
+    name: Publish verified release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, paper-smoke]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: AstralIslands-plugin
+          path: release
+      - name: Publish plugin and checksum
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          cd release
+          sha256sum *.jar > SHA256SUMS.txt
+          gh release create "$TAG" *.jar SHA256SUMS.txt --verify-tag --generate-notes --title "Astral Islands $TAG"

@@ -1,0 +1,65 @@
+plugins {
+    id 'java'
+    id 'jacoco'
+    id 'com.gradleup.shadow' version '8.3.6'
+}
+
+group = 'dev.astral'
+version = '1.0.0'
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    withSourcesJar()
+}
+repositories {
+    mavenCentral()
+    maven { url = 'https://repo.papermc.io/repository/maven-public/' }
+}
+dependencies {
+    compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
+    implementation 'org.xerial:sqlite-jdbc:3.49.1.0'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.3'
+    testImplementation platform('org.junit:junit-bom:5.12.1')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.release = 21
+    options.compilerArgs += ['-Xlint:all', '-parameters']
+}
+processResources {
+    inputs.property('version', project.version)
+    filesMatching('plugin.yml') { expand(version: project.version) }
+}
+test {
+    useJUnitPlatform()
+    maxParallelForks = 1
+    testLogging { events 'failed', 'skipped'; exceptionFormat 'full' }
+    finalizedBy jacocoTestReport
+}
+jacoco { toolVersion = '0.8.12' }
+jacocoTestReport {
+    dependsOn test
+    reports { xml.required = true; html.required = true }
+}
+jacocoTestCoverageVerification {
+    dependsOn test
+    violationRules {
+        rule {
+            element = 'PACKAGE'
+            includes = ['dev.astral.domain']
+            limit { counter = 'LINE'; minimum = 0.80 }
+        }
+    }
+}
+check.dependsOn jacocoTestCoverageVerification
+shadowJar {
+    archiveClassifier = ''
+    relocate 'com.fasterxml.jackson', 'dev.astral.libs.jackson'
+    mergeServiceFiles()
+    // SQLite loads a platform-specific JNI library: do not relocate or minimize it.
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+}
+jar { archiveClassifier = 'thin' }
+build.dependsOn shadowJar

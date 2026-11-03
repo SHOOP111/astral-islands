@@ -1,0 +1,20 @@
+name: AstralIslands
+version: '${version}'
+main: dev.astral.paper.AstralPlugin
+api-version: '1.21'
+author: SHOOP111
+description: Transactional skyblock with constellations, contracts and offline expeditions.
+website: https://github.com/SHOOP111/astral-islands
+commands:
+  island:
+    aliases: [is, skyblock, astral]
+    description: Open Astral Islands or use /is help
+    permission: astral.use
+permissions:
+  astral.use:
+    default: true
+  astral.admin:
+    default: op
+  astral.bypass:
+    description: Explicit bypass of island protection (not included in admin)
+    default: false
