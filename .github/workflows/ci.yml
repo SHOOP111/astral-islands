@@ -31,7 +31,7 @@ jobs:
         run: ./gradlew --no-daemon clean check shadowJar
       - name: Upload test reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-reports-${{ matrix.os }}
           path: |
@@ -39,7 +39,7 @@ jobs:
             build/test-results/
       - name: Upload installable plugin
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: AstralIslands-plugin
           path: build/libs/astral-islands-1.0.0.jar
@@ -61,7 +61,7 @@ jobs:
           path: build/libs
       - name: Boot Paper twice and assert live behavior
         run: python3 scripts/paper_smoke.py build/libs/astral-islands-1.0.0.jar
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: paper-smoke-logs
