@@ -55,7 +55,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: AstralIslands-plugin
           path: build/libs
@@ -77,7 +77,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: AstralIslands-plugin
           path: release
